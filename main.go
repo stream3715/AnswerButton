@@ -31,7 +31,8 @@ func main() {
 	lag := ""
 	name := ""
 	host := "internal.kaijudoumei.com"
-	stats := ""
+	// host := "127.0.0.1"
+	stats := "Ready"
 
 	iddata := identifer{&lag, &name, &host, &stats, sig, res}
 
@@ -51,6 +52,8 @@ func send(command int, payload string, id *identifer) (int, string) {
 		panic(err)
 	}
 
+	conn.SetDeadline(time.Now().Add(5 * time.Second))
+
 	sendBody := fmt.Sprintf("[{\"name\":\"%s\", \"command\":%d, \"payload\":\"%s\"}]", *id.name, command, payload)
 	_, err = conn.Write([]byte(sendBody))
 	if err != nil {
@@ -69,14 +72,19 @@ func send(command int, payload string, id *identifer) (int, string) {
 	switch command {
 	case 0:
 		recvStr := string(recvBuf[:bytes.IndexByte(recvBuf, 0)])
-		if recvStr == "0" {
-			*id.stats = "Wait"
-			return command, *id.lag
-		} else if recvStr == "1" {
-			*id.stats = "Ready"
-			return command, *id.lag
+		if recvStr[0] != ',' {
+			if recvStr[0] == '8' {
+				*id.stats = "Wait"
+				return command, recvStr[2:]
+			} else if recvStr[0] == '9' {
+				*id.stats = "Ready"
+				return command, recvStr[2:]
+			} else {
+				return command, recvStr[2:]
+			}
+		} else {
+			return command, recvStr[1:]
 		}
-		return command, recvStr
 
 	case 1:
 		raised := "Raised"
@@ -100,7 +108,7 @@ func makeWelcome(id *identifer) *widget.Box {
 	})
 
 	go func() {
-		t := time.NewTicker(time.Second)
+		t := time.NewTicker(100 * time.Millisecond)
 		for range t.C {
 			lbl.SetText("Player name : " + *id.name)
 			lblstats.SetText("Status : " + *id.stats)
