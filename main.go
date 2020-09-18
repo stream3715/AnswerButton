@@ -30,7 +30,7 @@ func main() {
 	res := make(chan string, 100)
 	lag := ""
 	name := ""
-	host := "internal.kaijudoumei.com"
+	host := "wcas.jp"
 	// host := "127.0.0.1"
 	stats := "Ready"
 
@@ -52,7 +52,7 @@ func send(command int, payload string, id *identifer) (int, string) {
 		panic(err)
 	}
 
-	conn.SetDeadline(time.Now().Add(5 * time.Second))
+	conn.SetDeadline(time.Now().Add(1 * time.Second))
 
 	sendBody := fmt.Sprintf("[{\"name\":\"%s\", \"command\":%d, \"payload\":\"%s\"}]", *id.name, command, payload)
 	_, err = conn.Write([]byte(sendBody))
@@ -65,8 +65,11 @@ func send(command int, payload string, id *identifer) (int, string) {
 
 	_, err = conn.Read(recvBuf)
 	if err != nil {
-		log.Fatalln(err)
-		os.Exit(1)
+		if nerr, ok := err.(net.Error); ok && nerr.Temporary() {
+			return send(command, payload, id)
+		}
+		log.Fatal(err)
+		panic(err)
 	}
 
 	switch command {
@@ -108,7 +111,7 @@ func makeWelcome(id *identifer) *widget.Box {
 	})
 
 	go func() {
-		t := time.NewTicker(100 * time.Millisecond)
+		t := time.NewTicker(500 * time.Millisecond)
 		for range t.C {
 			lbl.SetText("Player name : " + *id.name)
 			lblstats.SetText("Status : " + *id.stats)
