@@ -27,13 +27,13 @@ deps:
 
 # クロスコンパイル
 build-win:
-	set CGO_ENABLED=1&&set GOOS=windows&& set GOARCH=amd64&& $(GOBUILD) -o $(BINARY_WIN) -v -ldflags -H=windowsgui
+	set CGO_ENABLED=1 && set GOOS=windows && set GOARCH=amd64&& $(GOBUILD) -o $(BINARY_WIN) -v -ldflags -H=windowsgui
 
 build-mac:
-	set CGO_ENABLED=1&&set GOOS=darwin&& set GOARCH=amd64&& $(GOBUILD) -o $(BINARY_NAME) -v
+	CGO_CFLAGS=-mmacosx-version-min=10.8 CGO_LDFLAGS=-mmacosx-version-min=10.8 CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 && $(GOBUILD) -o $(BINARY_NAME) -v
 
 build-linux:
-	set CGO_ENABLED=1&& set GOOS=linux&& set GOARCH=amd64&& $(GOBUILD) -o $(BINARY_UNIX) -v
+	CGO_ENABLED=1 GOOS=linux GOARCH=amd64 && $(GOBUILD) -o $(BINARY_UNIX) -v
 
 docker-build:
 	docker run --rm -it -v "$(GOPATH)":/go -w /go/src/bitbucket.org/rsohlich/makepost golang:latest go build -o "$(BINARY_UNIX)" -v
